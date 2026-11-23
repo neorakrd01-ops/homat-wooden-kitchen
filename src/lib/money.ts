@@ -58,26 +58,46 @@ export function sumLines(lines: { quantity: number; unitPrice: number }[]): numb
   return lines.reduce((s, l) => s + lineTotal(l.quantity, l.unitPrice), 0);
 }
 
+// All dates are shown in Iraq time, whatever clock the server uses (online servers run on UTC).
+// Iraq is UTC+3 all year (no daylight saving).
+export const TIME_ZONE = "Asia/Baghdad";
+const IRAQ_OFFSET_HOURS = 3;
+const ymdFormat = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** "yyyy-mm-dd" of this moment in Iraq. */
+function iraqYmd(d: Date): string {
+  return ymdFormat.format(d);
+}
+
 export function formatDate(d: Date | string | null | undefined, digits: Digits = "western"): string {
   if (!d) return "—";
-  const date = typeof d === "string" ? new Date(d) : d;
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  return toDigits(`${dd}/${mm}/${date.getFullYear()}`, digits);
+  const [y, m, day] = iraqYmd(typeof d === "string" ? new Date(d) : d).split("-");
+  return toDigits(`${day}/${m}/${y}`, digits);
 }
 
 /** yyyy-mm-dd for <input type="date"> */
 export function dateInput(d: Date | null | undefined): string {
-  if (!d) return "";
-  const date = new Date(d);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return d ? iraqYmd(new Date(d)) : "";
 }
 
+/** A typed date is stored as noon Iraq time, so it never slips to the day before or after. */
 export function parseDateInput(s: string | null | undefined): Date | null {
   if (!s) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
   if (!m) return null;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12 - IRAQ_OFFSET_HOURS));
+}
+
+/** Midnight at the start of the current month, Iraq time. */
+export function startOfIraqMonth(now = new Date()): Date {
+  const [y, m] = iraqYmd(now).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1, -IRAQ_OFFSET_HOURS));
+}
+
+/** Midnight at the start of today, Iraq time. */
+export function startOfIraqDay(now = new Date()): Date {
+  const [y, m, d] = iraqYmd(now).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, -IRAQ_OFFSET_HOURS));
 }
 
 export function docNumber(prefix: string, n: number): string {

@@ -4,13 +4,14 @@ import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { errorMessages } from "@/lib/errors";
 import { loginAction } from "@/lib/auth-actions";
-import { getSessionUserId } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { ActionForm } from "@/components/ActionForm";
 import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function LoginPage() {
   const { t } = await getT();
-  if (await getSessionUserId()) redirect("/");
+  // Check the account really exists, not just the cookie; otherwise a stale cookie loops between / and /login.
+  if (await getSessionUser()) redirect("/");
   const ready = await db.user.findFirst({ where: { totpEnabled: true } });
 
   if (!ready) {

@@ -5,8 +5,8 @@
 //   USD -> cents  (1 USD = 100)
 // Exchange rates are always "IQD per 1 USD".
 //
-// Local development uses SQLite. Before going online, switch the provider
-// to "postgresql" and point DATABASE_URL at the hosted database.
+// Local development uses SQLite. Online, scripts/prepare-db.mjs switches the
+// provider to "postgresql" automatically when DATABASE_URL starts with "postgres".
 
 generator client {
   provider = "prisma-client-js"

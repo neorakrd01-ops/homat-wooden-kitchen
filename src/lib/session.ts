@@ -69,12 +69,18 @@ export async function getSessionUserId(): Promise<string | null> {
   }
 }
 
+/** The logged-in manager, or null if the session is missing, expired, or points to an account that no longer exists. */
+export async function getSessionUser() {
+  const id = await getSessionUserId();
+  if (!id) return null;
+  const user = await db.user.findUnique({ where: { id } });
+  return user?.totpEnabled ? user : null;
+}
+
 /** Use at the top of every protected page and server action. */
 export async function requireUser() {
-  const id = await getSessionUserId();
-  if (!id) redirect("/login");
-  const user = await db.user.findUnique({ where: { id } });
-  if (!user || !user.totpEnabled) redirect("/login");
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
   return user;
 }
 

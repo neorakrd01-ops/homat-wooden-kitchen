@@ -37,12 +37,10 @@ You need the `SETUP_KEY` from the `.env` file.
 - **Download backup** (in the menu) gives an Excel file of all customers, orders, payments, quotes, prices and the activity log. Download it weekly and keep it off the computer.
 - Online, the hosting database also keeps daily backups (paid plan).
 
-## Going online (not done yet)
+## Going online
 
-1. Create accounts **in the factory's name**: GitHub, Vercel, and Supabase or Neon (paid plan, about $25/month).
-2. In `prisma/schema.prisma`, change `provider = "sqlite"` to `provider = "postgresql"`.
-3. On Vercel, set the environment variables from `.env.example`. Use new random values for `SESSION_SECRET` and `SETUP_KEY`, and set `APP_URL` to the real web address.
-4. Deploy, run `npx prisma db push` against the online database, then do the first-time setup.
+Step-by-step guide: [DEPLOY.md](DEPLOY.md). The short version: GitHub (code), Vercel Pro (website) and Neon (database).
+When `DATABASE_URL` starts with `postgres`, `scripts/prepare-db.mjs` switches the database type automatically, and `npm run build:online` creates the tables during the build.
 
 ## Still to check before real use
 

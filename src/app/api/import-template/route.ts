@@ -1,11 +1,11 @@
-import ExcelJS from "exceljs";
-import { getSessionUserId } from "@/lib/session";
+﻿import ExcelJS from "exceljs";
+import { getSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 /** Empty Excel file with the columns the importer expects, plus one example row. */
 export async function GET() {
-  if (!(await getSessionUserId())) return new Response("Unauthorized", { status: 401 });
+  if (!(await getSessionUser())) return new Response("Unauthorized", { status: 401 });
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Orders");
   ws.columns = [

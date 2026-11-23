@@ -1,6 +1,6 @@
-import ExcelJS from "exceljs";
+﻿import ExcelJS from "exceljs";
 import { db } from "@/lib/db";
-import { getSessionUserId } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { docNumber, sumLines, toMajor, type Currency } from "@/lib/money";
 import { balanceOf, paidNet } from "@/lib/orders";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /** Full backup of the important records as an Excel file. */
 export async function GET() {
-  if (!(await getSessionUserId())) return new Response("Unauthorized", { status: 401 });
+  if (!(await getSessionUser())) return new Response("Unauthorized", { status: 401 });
 
   const [customers, quotes, orders, payments, prices, activity] = await Promise.all([
     db.customer.findMany({ orderBy: { createdAt: "asc" } }),

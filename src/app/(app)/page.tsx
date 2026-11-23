@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getView } from "@/lib/view";
 import { balanceOf, paidNet } from "@/lib/orders";
-import { docNumber } from "@/lib/money";
+import { docNumber, startOfIraqDay, startOfIraqMonth } from "@/lib/money";
 import type { Key } from "@/lib/i18n";
 
 export default async function Dashboard() {
@@ -19,9 +19,8 @@ export default async function Dashboard() {
     .sort((a, b) => (a.o.deliveryDate?.getTime() ?? Infinity) - (b.o.deliveryDate?.getTime() ?? Infinity));
   for (const x of unpaid) owed[x.o.currency] += x.balance;
 
-  const monthStart = new Date();
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
+  const monthStart = startOfIraqMonth();
+  const today = startOfIraqDay();
   const monthPayments = await db.payment.findMany({ where: { cancelled: false, date: { gte: monthStart }, kind: { not: "OPENING" } } });
   const received: Record<string, number> = { IQD: 0, USD: 0 };
   for (const p of monthPayments) received[p.currency] += p.kind === "REFUND" ? -p.amount : p.amount;
@@ -70,7 +69,7 @@ export default async function Dashboard() {
               </thead>
               <tbody>
                 {unpaid.map(({ o, balance, paid }) => {
-                  const late = o.deliveryDate && o.deliveryDate < new Date();
+                  const late = o.deliveryDate && o.deliveryDate < today;
                   return (
                     <tr key={o.id}>
                       <td><Link className="text-wood-700 underline" href={`/orders/${o.id}`}>{docNumber("O", o.number)}</Link></td>

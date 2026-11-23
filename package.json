@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/prepare-db.mjs && prisma generate && next build",
+    "build:online": "node scripts/prepare-db.mjs && prisma generate && prisma db push --skip-generate && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "db:push": "prisma db push",
-    "postinstall": "prisma generate"
+    "db:push": "node scripts/prepare-db.mjs && prisma db push",
+    "postinstall": "node scripts/prepare-db.mjs && prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
@@ -30,7 +31,6 @@
     "@types/react-dom": "^19.1.0",
     "prisma": "^6.0.0",
     "tailwindcss": "^4.1.0",
-    "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   },
   "allowScripts": {
