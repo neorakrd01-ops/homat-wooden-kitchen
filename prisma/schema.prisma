@@ -1,0 +1,167 @@
+// Database schema for the Homat kitchen factory system.
+//
+// Money is stored as whole numbers in "minor units":
+//   IQD -> dinars (no fractions)
+//   USD -> cents  (1 USD = 100)
+// Exchange rates are always "IQD per 1 USD".
+//
+// Local development uses SQLite. Before going online, switch the provider
+// to "postgresql" and point DATABASE_URL at the hosted database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  username       String    @unique
+  passwordHash   String
+  totpSecret     String?
+  totpEnabled    Boolean   @default(false)
+  recoveryCodes  String    @default("[]") // JSON array of bcrypt hashes
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @default("")
+  address   String   @default("")
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quotes    Quote[]
+  orders    Order[]
+}
+
+model PriceItem {
+  id        String   @id @default(cuid())
+  nameKu    String
+  nameEn    String   @default("")
+  nameAr    String   @default("")
+  unit      String   @default("")
+  price     Int
+  currency  String   @default("IQD") // IQD | USD
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quote {
+  id         String      @id @default(cuid())
+  number     Int         @unique
+  customerId String
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  title      String      @default("")
+  currency   String      @default("IQD")
+  status     String      @default("DRAFT") // DRAFT | SENT | ACCEPTED | REJECTED
+  discount   Int         @default(0)
+  notes      String      @default("")
+  shareToken String      @unique
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  lines      QuoteLine[]
+  order      Order?
+}
+
+model QuoteLine {
+  id          String @id @default(cuid())
+  quoteId     String
+  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float
+  unitPrice   Int
+  position    Int    @default(0)
+}
+
+model Order {
+  id           String          @id @default(cuid())
+  number       Int             @unique
+  customerId   String
+  customer     Customer        @relation(fields: [customerId], references: [id])
+  quoteId      String?         @unique
+  quote        Quote?          @relation(fields: [quoteId], references: [id])
+  title        String          @default("")
+  currency     String          @default("IQD")
+  total        Int // current agreed total, after discount
+  discount     Int             @default(0)
+  deliveryDate DateTime?
+  status       String          @default("ACTIVE") // ACTIVE | COMPLETED | CANCELLED
+  notes        String          @default("")
+  imported     Boolean         @default(false)
+  cancelReason String          @default("")
+  cancelledAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  lines        OrderLine[]
+  revisions    OrderRevision[]
+  payments     Payment[]
+}
+
+model OrderLine {
+  id          String @id @default(cuid())
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float
+  unitPrice   Int
+  position    Int    @default(0)
+}
+
+model OrderRevision {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  oldTotal      Int
+  newTotal      Int
+  reason        String
+  linesSnapshot String // JSON of the lines BEFORE the change
+  createdAt     DateTime @default(now())
+}
+
+model Payment {
+  id                    String    @id @default(cuid())
+  number                Int       @unique
+  orderId               String
+  order                 Order     @relation(fields: [orderId], references: [id])
+  kind                  String    @default("PAYMENT") // PAYMENT | REFUND | OPENING
+  amount                Int // in the payment's own currency (minor units)
+  currency              String
+  exchangeRate          Float? // IQD per 1 USD, only when currency differs from the order
+  amountInOrderCurrency Int
+  method                String    @default("CASH") // CASH | TRANSFER | CARD | OTHER
+  date                  DateTime  @default(now())
+  note                  String    @default("")
+  cancelled             Boolean   @default(false)
+  cancelReason          String    @default("")
+  cancelledAt           DateTime?
+  shareToken            String    @unique
+  createdAt             DateTime  @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model ActivityLog {
+  id       String   @id @default(cuid())
+  at       DateTime @default(now())
+  action   String
+  entity   String
+  entityId String
+  summary  String
+  details  String   @default("{}")
+}
+
+model Counter {
+  name  String @id
+  value Int    @default(0)
+}
